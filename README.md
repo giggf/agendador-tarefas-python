@@ -14,9 +14,9 @@ Apenas o [Python](https://www.python.org/) instalado no Windows.
 
 ### Passo a Passo
 1. Clone este repositório:
-  ```bash
-  git clone + link desse respositório
-  ```
+    ```bash
+    git clone + link desse respositório
+    ```
 2. Entre na pasta:
    ```bash
    cd "NOME DA PASTA DO REPOSITÓRIO"
