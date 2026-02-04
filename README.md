@@ -46,7 +46,7 @@ O projeto foi construído utilizando **apenas bibliotecas nativas do Python**, g
 
 # 📦 Como criar um exectável para a aplicação (.exe)
 
-Para tranforPara transformar este script em um software standalone (que funciona em computadores sem Python), utilizamos o **PyInstaller**.
+Para transformar este script em um software standalone (que funciona em computadores sem Python), utilizamos o **PyInstaller**.
 
 ## 1. Instalar o PyInstaller
    ```bash

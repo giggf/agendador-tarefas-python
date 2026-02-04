@@ -24,17 +24,15 @@ ARQUIVO_LOG = os.path.join(application_path, "log_execucao.txt")
 class AgendadorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Agendador Python 4.3")
-        self.root.geometry("1000x700") # Aumentei um pouco a altura
+        self.root.title("Agendador 4.4")
+        self.root.geometry("1000x700")
         
-        # Tenta carregar ícone da janela
         try:
             icone_path = self.pegar_caminho_recurso("icone.ico")
             if os.path.exists(icone_path):
                 self.root.iconbitmap(icone_path)
         except: pass
 
-        # Configuração do botão fechar (Tray)
         self.root.protocol('WM_DELETE_WINDOW', self.minimizar_para_tray)
         
         self.tarefas = []
@@ -43,9 +41,7 @@ class AgendadorApp:
         
         self.root.bind('<F5>', self.atualizar_tudo)
         
-        # --- 1. ÁREA DE CADASTRO (CENTRALIZADA) ---
-        # Removi o fill="x" para que o frame não estique.
-        # O padrão do pack() sem side=... é centralizar horizontalmente no topo.
+        # --- 1. ÁREA DE CADASTRO ---
         self.frame_top = tk.LabelFrame(root, text="Configurar / Editar Tarefa", padx=20, pady=15)
         self.frame_top.pack(padx=10, pady=15) 
         
@@ -98,7 +94,7 @@ class AgendadorApp:
         self.btn_cancelar.pack(side="left", padx=5)
         self.btn_cancelar.config(state="disabled")
 
-        # --- 2. LISTAGEM (ESTA CONTINUA EXPANDINDO) ---
+        # --- 2. LISTAGEM ---
         frame_lista = tk.LabelFrame(root, text="Monitoramento de Tarefas", padx=10, pady=10)
         frame_lista.pack(fill="both", expand=True, padx=10, pady=5)
         
@@ -118,7 +114,6 @@ class AgendadorApp:
         
         self.tree.pack(fill="both", expand=True)
         
-        # Botões Inferiores
         frame_botoes = tk.Frame(frame_lista)
         frame_botoes.pack(pady=5)
         
@@ -142,18 +137,14 @@ class AgendadorApp:
         for nome_img in ["icone.ico", "icone.png"]:
             caminho = self.pegar_caminho_recurso(nome_img)
             if os.path.exists(caminho):
-                try:
-                    return Image.open(caminho)
+                try: return Image.open(caminho)
                 except: pass
-
         width = 64
         height = 64
-        color1 = (0, 120, 215)
-        color2 = (255, 255, 255)
-        image = Image.new('RGB', (width, height), color1)
+        image = Image.new('RGB', (width, height), (0, 120, 215))
         dc = ImageDraw.Draw(image)
-        dc.rectangle((width // 2, 0, width, height // 2), fill=color2)
-        dc.rectangle((0, height // 2, width // 2, height), fill=color2)
+        dc.rectangle((width // 2, 0, width, height // 2), fill='white')
+        dc.rectangle((0, height // 2, width // 2, height), fill='white')
         return image
 
     def minimizar_para_tray(self):
@@ -162,10 +153,8 @@ class AgendadorApp:
             image = self.criar_imagem_icone()
             menu = (pystray.MenuItem('Abrir Agendador', self.mostrar_janela), 
                     pystray.MenuItem('Sair Totalmente', self.sair_do_programa))
-            
             self.icon = pystray.Icon("AgendadorPython", image, "Agendador Python", menu)
             threading.Thread(target=self.icon.run, daemon=True).start()
-            
         except Exception as e:
             print(f"Erro no Tray: {e}")
             self.root.deiconify()
@@ -282,25 +271,42 @@ class AgendadorApp:
         self.salvar_dados()
         self.atualizar_visual()
 
-    def calcular_proxima(self, tarefa):
+    # --- LÓGICA DO MOTOR ATUALIZADA (ROBUSTA) ---
+
+    def calcular_proxima(self, tarefa, base_comparacao=None):
+        # Se base_comparacao for passada, calculamos o próximo passo A PARTIR dessa data
+        # Se não (None), calculamos a partir de AGORA (para mostrar na tela)
+        
         agora = datetime.now()
         ancora = datetime.strptime(tarefa['anchor_str'], "%d/%m/%Y %H:%M")
         valor = tarefa['interval_val']
         unidade = tarefa['interval_unit']
+        
         if valor == 0:
             return ancora if ancora > agora else None
+
         if unidade == "Minutos": delta = timedelta(minutes=valor)
         elif unidade == "Horas": delta = timedelta(hours=valor)
         elif unidade == "Dias": delta = timedelta(days=valor)
+        
         proxima = ancora
-        while proxima <= agora:
+        
+        # Limite de comparação: até onde vamos calcular?
+        # Se for para o motor, queremos saber o próximo após a ÚLTIMA EXECUÇÃO
+        # Se for visual, queremos saber o próximo após AGORA
+        limite = base_comparacao if base_comparacao else agora
+        
+        # Avança a data até passar do limite
+        while proxima <= limite:
             proxima += delta
+            
         return proxima
 
     def atualizar_visual(self):
         for i in self.tree.get_children(): self.tree.delete(i)
         for t in self.tarefas:
-            prox = self.calcular_proxima(t)
+            # Para visual, calculamos baseado no "agora"
+            prox = self.calcular_proxima(t, base_comparacao=None)
             prox_str = prox.strftime("%d/%m/%Y %H:%M:%S") if prox else "Concluído"
             regra = f"Cada {t['interval_val']} {t['interval_unit']}"
             ult_exec = t.get('last_run', 'Nunca')
@@ -314,6 +320,7 @@ class AgendadorApp:
                     t['last_run'] = agora_str
                     break
             self.salvar_dados()
+            
         with open(ARQUIVO_LOG, "a", encoding="utf-8") as f:
             f.write(f"[{agora_str}] Iniciando: {path}\n")
         try:
@@ -348,15 +355,32 @@ class AgendadorApp:
     def motor_loop(self):
         while True:
             agora = datetime.now()
+            
             for t in self.tarefas:
-                prox = self.calcular_proxima(t)
-                if prox:
-                    diff = (prox - agora).total_seconds()
-                    if 0 <= diff < 1.5:
+                # 1. Descobrir quando foi a última vez que rodou
+                last_run_str = t.get('last_run', 'Nunca')
+                
+                if last_run_str == "Nunca":
+                    # Se nunca rodou, usamos a âncora menos 1 segundo como base
+                    # Isso força a primeira execução a acontecer na hora da âncora
+                    ancora = datetime.strptime(t['anchor_str'], "%d/%m/%Y %H:%M")
+                    base_time = ancora - timedelta(seconds=1)
+                else:
+                    base_time = datetime.strptime(last_run_str, "%d/%m/%Y %H:%M:%S")
+                
+                # 2. Calcular qual deveria ser a PRÓXIMA execução depois da última
+                proxima_devida = self.calcular_proxima(t, base_comparacao=base_time)
+                
+                if proxima_devida:
+                    # 3. Se essa data já passou (ou é agora), EXECUTA!
+                    # Isso cobre casos onde o PC dormiu por 1 hora e perdeu o horário
+                    if proxima_devida <= agora:
+                        print(f"Executando {t['nome']} (Devido: {proxima_devida})")
                         self.root.after(0, lambda p=t['path'], n=t['nome']: self.executar_processo(p, n))
-                        self.root.after(100, self.atualizar_visual)
-                        time.sleep(1.5)
-            time.sleep(1)
+                        self.root.after(500, self.atualizar_visual)
+                        time.sleep(1) # Pequena pausa para garantir gravação
+
+            time.sleep(1) # Checagem a cada segundo
 
     def iniciar_motor(self):
         t = threading.Thread(target=self.motor_loop)
