@@ -1,26 +1,30 @@
 # 📅 Agendador de Tarefas Master (Python)
 
-Uma aplicação Desktop robusta para agendamento e automação de executáveis no Windows. Desenvolvido para oferecer controle preciso sobre intervalos de tempo e ancoragem de horários, superando limitações de agendadores comuns.
+Uma aplicação Desktop para o **agendamento e automação da execução de programas no Windows**, desenvolvida em Python com interface gráfica e persistência local.
 
+O projeto surgiu da necessidade de tornar a execução recorrente de tarefas mais simples e previsível, permitindo configurar horários, intervalos e executáveis por meio de uma interface, além de manter histórico e logs das execuções.
+
+A aplicação foi desenvolvida utilizando majoritariamente recursos da **biblioteca padrão do Python**, sem dependências externas para sua execução a partir do código-fonte.
 ## ✨ Funcionalidades Principais
 
-- **Interface Gráfica (GUI):** Interface limpa e nativa (Tkinter) para gerenciar tarefas sem mexer em código.
-- **Ancoragem de Tempo (Time Anchoring):** Defina uma data e hora de início (ex: 25/11 às 14:00) e um intervalo (ex: 24 horas). O sistema garante que a execução ocorra sempre às 14:00, independente de quando o computador foi ligado.
+- **Interface Gráfica com Tkinter:** criação, edição e exclusão de tarefas sem necessidade de alterar o código.
+- **Preservação do horário de referência:** uma tarefa configurada para executar às 14h a cada 24 horas mantém esse horário como referência entre as execuções.
 - **Histórico de Execução:** Visualização na tabela de quando foi a última vez que a tarefa rodou.
 - **Edição de Tarefas:** Permite alterar horários e caminhos de tarefas já cadastradas.
 - **Execução Visível:** Os programas agendados abrem uma janela do CMD identificada, permitindo monitorar o status e logs do script em tempo real.
-- **Logs de Auditoria:** Gera um arquivo `log_execucao.txt` registrando todas as tentativas de execução e erros.
+- **Persistência local:** configurações das tarefas são armazenadas em JSON e recuperadas ao iniciar a aplicação.
+- **Logs de Auditoria:** gera um arquivo `log_execucao.txt` registrando todas as tentativas de execução e erros.
 - **Portabilidade:** Salva os dados em JSON na própria pasta, facilitando o transporte via Pen Drive ou rede.
 
 ## 🛠️ Tecnologias Utilizadas
 
-O projeto foi construído utilizando **apenas bibliotecas nativas do Python**, garantindo máxima compatibilidade e leveza:
+Bibliotecas utilizadas:
 
-- `tkinter` (Interface Gráfica)
-- `datetime` & `timedelta` (Cálculos temporais precisos)
+- `tkinter` - Interface gráfica
+- `datetime` & `timedelta` - Controle e cálculo dos agendamentos
 - `subprocess` (Gerenciamento de processos do Windows)
-- `threading` (Execução paralela para não travar a interface)
-- `json` (Banco de dados local)
+- `threading` - Execução paralela para não travar a interface
+- `json` - Persistência local das tarefas
 
 **Não é necessário instalar bibliotecas externas (como pandas ou schedule) para rodar o código fonte.**
 
@@ -29,19 +33,22 @@ O projeto foi construído utilizando **apenas bibliotecas nativas do Python**, g
 ## 🚀 Como Rodar (Código Fonte)
 
 ### Pré-requisitos
-- Python 3.x instalado no Windows.
+- Python 3.x
+- Windows
 
 ### Passo a Passo
 1. Clone este repositório:
    ```bash
-   git clone https://github.com/giggf/agendador-tarefas-python
+   git clone <URL-DO-REPOSITÓRIO>
    ```
 2. Entre na pasta do projeto :
    ```bash
-   cd "nome do repositório"
+   cd <NOME-DO-REPOSITÓRIO>
    ```
 3. Execute o programa.
-
+   ```bash
+   python agendador.pyw
+   ```
 ---
 
 # 📦 Como criar um exectável para a aplicação (.exe)
@@ -61,29 +68,23 @@ O executável final estará na pasta `dist`.
 
 ---
 
-# ⚠️ Solução de Problemas (Windows Long Path)
-
-Se ao tentar criar o executável você receber um erro vermelho mencionando **"Windows Long Path support"** ou **"file does not exist"**, siga estes passos (comuns em PCs corporativos):
-
-1. Crie uma pasta na raiz do disco C, exemplo: C:\Dev.
-2. Copie o arquivo agendador.pyw para lá.
-3. Abra o terminal nessa pasta (cd C:\Dev).
-4. Crie um ambiente virtual curto: 
-   ```bash
-   python -m venv venv
-   .\venv\Scripts\activate
-   pip install pyinstaller
-   ```
-5. Gere o executável.
-
----
-
 # 📂 Estrutura de Arquivos
-Ao rodar, o programa gerará automaticamente dois arquivos na mesma pasta:`
+Ao rodar, o programa gerará automaticamente dois arquivos na mesma pasta:
 - `tarefas.json`: Banco de dados das suas tarefas.
 - `log_execucao.txt`: Histórico de erros e sucessos.
 
 **Nota:** Mantenha o tarefas.json junto do .exe se mover o programa de lugar, para não perder seus agendamentos.
+
+# 🧠 Conceitos Aplicados
+O desenvolvimento deste projeto envolver conceitos de:
+- Programação orientada a eventos
+- Interface gráfica desktop
+- Manipulação de procesos
+- Concorrência co threads
+- Persistência de dados em JSON
+- Tratamento de erros e logging
+- Manipulação de datas e intervalos de tempo
+- Empacotamento de aplicações Python
 
 
 
